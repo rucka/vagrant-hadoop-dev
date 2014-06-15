@@ -31,7 +31,7 @@ class hadoop {
         command => "sudo tar -xzf ${pack_folder}/hadoop.tgz -C ${hadoop_root}",
         path => $path,
         creates => "${hadoop_home}-${hadoop_ver}",
-        onlyif => "test -f ${pack_folder}/hadoop.tgz",
+        onlyif => "test ! -d ${hadoop_home}",
         require => Exec["download_hadoop"],
     }
 
@@ -46,7 +46,7 @@ class hadoop {
         command => "sudo tar -xzf ${pack_folder}/pig.tgz -C ${pig_root}",
         path => $path,
         creates => "${pig_home}-${pig_ver}",
-        onlyif => "test -f ${pack_folder}/pig.tgz",
+        onlyif => "test ! -d ${pig_home}",
         require => Exec["download_pig"],
     }
 
