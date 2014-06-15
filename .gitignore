@@ -1,0 +1,9 @@
+*~
+.*
+!/.gitignore
+*.swp
+*.swo
+*.pyc
+download/*
+!/download/.keep
+
