@@ -2,6 +2,66 @@ class hadoop {
     $hadoop_root = "/usr/local"
     $hadoop_home = "${hadoop_root}/hadoop"
     $hadoop_ver = "2.4.0"
+    $pack_folder = "/usr/download"
+    $hadoop_user = "vagrant"
+
+    info("starting installing hadoop ${hadoop_ver}. Path is: ${path}")     
+
+    exec { "download_hadoop":
+        command => "wget -O ${pack_folder}/hadoop-${hadoop_ver}.tgz http://apache.fis.uniroma2.it/hadoop/common/current/hadoop-${hadoop_ver}.tar.gz",
+        path => $path,
+        timeout => 12000,
+        unless => "ls ${hadoop_root} | grep hadoop-${hadoop_ver}", 
+        onlyif => "test ! -f ${pack_folder}/hadoop-${hadoop_ver}.tgz", 
+        require => Package["openjdk-7-jdk"]
+    }
+
+    exec { "unpack_hadoop":
+        command => "sudo tar -xzf ${pack_folder}/hadoop-${hadoop_ver}.tgz -C ${hadoop_root}",
+        path => $path,
+        creates => "${hadoop_home}-${hadoop_ver}",
+        onlyif => "test ! -d ${hadoop_home}",
+        require => Exec["download_hadoop"],
+    }
+
+    exec { "symlink_hadoop":
+        command => "ln -s ${hadoop_home}-${hadoop_ver} ${hadoop_home}",
+        path => $path,
+        creates => "${hadoop_home}",
+        require => Exec["unpack_hadoop"]
+    }
+
+    exec { "chown_hadoop":
+        command => "chown -R ${hadoop_user}:${hadoop_user} ${hadoop_home}-${hadoop_ver} ${hadoop_home}",
+        path => $path,
+        require => Exec["symlink_hadoop"]
+    }
+
+    file { "${hadoop_home}/etc/hadoop/hadoop-env.sh":
+        source => "/etc/puppet/files/modules/hadoop-env.sh",
+        mode => 644,
+        owner => "${hadoop_user}",
+        group => "${hadoop_user}",
+        require => Exec["chown_hadoop"]
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+    $hadoop_root = "/usr/local"
+    $hadoop_home = "${hadoop_root}/hadoop"
+    $hadoop_ver = "2.4.0"
     $pig_root = "/usr/local"
     $pig_home = "${pig_root}/pig"
     $pig_ver = "0.12.1"
@@ -10,22 +70,17 @@ class hadoop {
     info("starting installing hadoop ${hadoop_ver}. Path is: ${path}")     
 
     exec { "download_hadoop":
+    
         command => "wget -O ${pack_folder}/hadoop.tgz http://apache.fis.uniroma2.it/hadoop/common/current/hadoop-${hadoop_ver}.tar.gz",
         path => $path,
         timeout => 12000,
         unless => "ls ${hadoop_root} | grep hadoop-${hadoop_ver}", 
         onlyif => "test ! -f ${pack_folder}/hadoop.tgz", 
-        require => Exec["jdk"]
+        #require => Exec["jdk"]
+        require => Exec["update-apt"]
     }
 
-    exec { "download_pig":
-        command => "wget -O ${pack_folder}/pig.tgz http://apache.fis.uniroma2.it/pig/stable/pig-${pig_ver}.tar.gz",
-        path => $path,
-        timeout => 12000,
-        unless => "ls ${pig_root} | grep pig-${pig_ver}", 
-        onlyif => "test ! -f ${pack_folder}/pig.tgz",
-        require => Exec["rename_hadoop"] 
-    } 
+
 
     exec { "unpack_hadoop":
         command => "sudo tar -xzf ${pack_folder}/hadoop.tgz -C ${hadoop_root}",
@@ -41,7 +96,18 @@ class hadoop {
         onlyif => "test -d ${hadoop_root}/hadoop-${hadoop_ver}",
         require => Exec["unpack_hadoop"]
     }
+*/
+/*    
     
+    exec { "download_pig":
+        command => "wget -O ${pack_folder}/pig.tgz http://apache.fis.uniroma2.it/pig/stable/pig-${pig_ver}.tar.gz",
+        path => $path,
+        timeout => 12000,
+        unless => "ls ${pig_root} | grep pig-${pig_ver}", 
+        onlyif => "test ! -f ${pack_folder}/pig.tgz",
+        require => Exec["rename_hadoop"] 
+    } 
+
     exec { "unpack_pig":
         command => "sudo tar -xzf ${pack_folder}/pig.tgz -C ${pig_root}",
         path => $path,
@@ -57,12 +123,32 @@ class hadoop {
         require => Exec["unpack_pig"]
     }
 
+    exec { "chown":
+        command => "sudo chown -R vagrant ${hadoop_home}; sudo chown -R vagrant ${pig_home}",
+        path => $path,
+        require => Exec["rename_pig"]
+    }
+    
+    file { "/home/vagrant/.bashrc":
+        source => "/etc/puppet/files/modules/hadoop/bashrc",
+        mode => 644,
+        owner => root,
+        group => root,
+        require => Exec["chown"]
+    }
+
+    exec { "source_bashrc":
+        command => "bash -c 'source /home/vagrant/.bashrc'",
+        path => $path,
+        require => File["/home/vagrant/.bashrc"]
+    }
+
     file { "/home/vagrant/.ssh/id_rsa":
         source => "/etc/puppet/files/modules/hadoop/id_rsa",
         mode => 600,
         owner => vagrant,
         group => vagrant,
-        require => Exec["update-apt"]
+        require => Exec["source_bashrc"]
     }
     
     file { "/home/vagrant/.ssh/id_rsa.pub":
@@ -70,7 +156,7 @@ class hadoop {
         mode => 600,
         owner => vagrant,
         group => vagrant,
-        require => Exec["update-apt"]
+        require => File["/home/vagrant/.ssh/id_rsa"]
     }
     
     ssh_authorized_key { "ssh_key":
@@ -80,4 +166,60 @@ class hadoop {
         user => "vagrant",
         require => File["/home/vagrant/.ssh/id_rsa.pub"]
     }
+
+
+    file { "${hadoop_home}/etc/hadoop/hadoop-env.sh":
+        source => "/etc/puppet/files/modules/hadoop/hadoop-env.sh",
+        mode => 644,
+        owner => root,
+        group => root,
+        require => Ssh_authorized_key["ssh_key"]
+    }
+
+    file { "${hadoop_home}/etc/hadoop/core-site.xml":
+        source => "/etc/puppet/files/modules/hadoop/core-site.xml",
+        mode => 644,
+        owner => root,
+        group => root,
+        require => File["${hadoop_home}/etc/hadoop/hadoop-env.sh"]
+    }
+
+    file { "${hadoop_home}/etc/hadoop/yarn-site.xml":
+        source => "/etc/puppet/files/modules/hadoop/yarn-site.xml",
+        mode => 644,
+        owner => root,
+        group => root,
+        require => File["${hadoop_home}/etc/hadoop/core-site.xml"]
+    }
+
+    file { "${hadoop_home}/etc/hadoop/mapred-site.xml":
+        source => "/etc/puppet/files/modules/hadoop/mapred-site.xml",
+        mode => 644,
+        owner => root,
+        group => root,
+        require => File["${hadoop_home}/etc/hadoop/yarn-site.xml"]
+    }
+
+    exec { "mkdir_hdfs":
+        command => "sudo mkdir -p /usr/local/hadoop_store/hdfs/namenode; sudo mkdir -p /usr/local/hadoop_store/hdfs/datanode",
+        path => $path,
+        onlyif => "test ! -d /usr/local/hadoop:store/hdfs/namenode",
+        require => File["${hadoop_home}/etc/hadoop/mapred-site.xml"]
+    }
+
+    file { "${hadoop_home}/etc/hadoop/hdfs-site.xml":
+        source => "/etc/puppet/files/modules/hadoop/hdfs-site.xml",
+        mode => 644,
+        owner => root,
+        group => root,
+        require => Exec["mkdir_hdfs"]
+    }
+
+    exec { "format":
+      command => "${hadoop_home}/bin/hadoop namenode -format -force -noniteractive",
+      path => $path,
+      timeout => 12000,
+      require => File["${hadoop_home}/etc/hadoop/hdfs-site.xml"]
+    }
+*/
 }

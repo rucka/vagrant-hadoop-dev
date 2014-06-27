@@ -6,4 +6,5 @@
 *.pyc
 download/*
 !/download/.keep
+!.bashrc
 
