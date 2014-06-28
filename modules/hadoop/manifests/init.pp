@@ -38,18 +38,59 @@ class hadoop {
     }
 
     file { "${hadoop_home}/etc/hadoop/hadoop-env.sh":
-        source => "/etc/puppet/files/modules/hadoop-env.sh",
+        source => "/etc/puppet/files/modules/hadoop/hadoop-env.sh",
         mode => 644,
         owner => "${hadoop_user}",
         group => "${hadoop_user}",
         require => Exec["chown_hadoop"]
     }
 
+    file { "${hadoop_home}/etc/hadoop/core-site.xml":
+        source => "/etc/puppet/files/modules/hadoop/core-site.xml",
+        mode => 644,
+        owner => "${hadoop_user}",
+        group => "${hadoop_user}",
+        require => File["${hadoop_home}/etc/hadoop/hadoop-env.sh"]
+    }
+    
+    file { "${hadoop_home}/etc/hadoop/hdfs-site.xml":
+        source => "/etc/puppet/files/modules/hadoop/hdfs-site.xml",
+        mode => 644,
+        owner => "${hadoop_user}",
+        group => "${hadoop_user}",
+        require => File["${hadoop_home}/etc/hadoop/core-site.xml"]
+    }
 
+    file { "/home/${hadoop_user}/.ssh/id_dsa":
+        source => "/etc/puppet/files/modules/hadoop/id_dsa",
+        mode => 600,
+        owner => "${hadoop_user}",
+        group => "${hadoop_user}",
+        require => File["${hadoop_home}/etc/hadoop/hdfs-site.xml"]
+    }
+    
+    file { "/home/${hadoop_user}/.ssh/id_dsa.pub":
+        source => "/etc/puppet/files/modules/hadoop/id_dsa.pub",
+        mode => 600,
+        owner => "${hadoop_user}",
+        group => "${hadoop_user}",
+        require => File["/home/${hadoop_user}/.ssh/id_dsa"]
+    }
+    
+    ssh_authorized_key { "ssh_key":
+        ensure => "present",
+        key => "AAAAB3NzaC1kc3MAAACBAIPPaHOG97d2F090Tbr8VZlQbpFtYadSWLdWaNAEQHSKNUgYSFCoqa1kOmf4dQCEJRMkrtyjd3TkLiKPj4i2uoRpjVi5KsaGd7AHazV9oHnRc7fFK37RDYr1KoV5orzTOXj3sl5FmUaVVz1se+HJzoeyeoIkvDDc3ekENgipSI8ZAAAAFQDh+R3PxT2BmO9d5z8hfqDao0epnwAAAIAORFTDwDGfNTGooOUrPIZ6oqFian1UP5opKpdXEd5yvAwiKV1lz2rYt/ONiYxh8xQsRiMOvrgp+ZWx2kL/dTakM6lSTA40hYlk86+AoLsYAqqkwH+hNjhUVifmI/5PyyMm2I63GwnHF7KdK3ObMdaI7PQSstyASHJaIBzsR7TMLwAAAIB68dTUY4/30NHXeWkb6aZ8LZP9qnz2LtUs8nfS+VrhP2MejZPa7wMPJ4i+3i+DdUoUIzj3sMde+WBBRMBXTjJEB0LspiqBsHHmVmDjqUAh7oBHu5vgtzQY60V6cjjIbaX+PpEp9kgH30lX4ag3YRgK6XvyhnbEBq0Z/idep16IXw==",
+        type => "ssh-dss",
+        user => "${hadoop_user}",
+        require => File["/home/${hadoop_user}/.ssh/id_dsa.pub"]
+    }
 
-
-
-
+    exec { "format":
+        command => "${hadoop_home}/bin/hdfs namenode -format",
+        path => $path,
+        logoutput => true,
+        require => Ssh_authorized_key["ssh_key"]
+    }
 
 
 

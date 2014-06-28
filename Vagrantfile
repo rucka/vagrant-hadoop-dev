@@ -4,9 +4,14 @@ Vagrant.configure("2") do |config|
     config.vm.hostname = "vagrant.example.com"
     config.vm.network "private_network", ip: "10.17.3.10"
        
-    config.vm.network "forwarded_port", guest: 50030, host: 51130
-    config.vm.network "forwarded_port", guest: 50070, host: 51170
-    config.vm.network "forwarded_port", guest: 50075, host: 51175
+    config.vm.network "forwarded_port", guest: 50030, host: 50030
+    config.vm.network "forwarded_port", guest: 50070, host: 50070
+    config.vm.network "forwarded_port", guest: 50075, host: 50075
+
+    #config.vm.customize [ "modifyvm", :id, "--memory", "1024"]
+    config.vm"virtualbox" do |v|
+        v.customize["modifyvm", :id, "--memory", "1024"]
+    end
 
     config.vm.synced_folder "shared", "/home/vagrant/shared"
     config.vm.synced_folder "modules", "/etc/puppet/files/modules", mount: "puppet" 
