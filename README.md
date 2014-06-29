@@ -22,7 +22,7 @@ setup install follow components:
 
 - Go to hadoop dir: `cd /usr/local/hadoop`
 - Create hdfs input folder: `bin/hdfs dfs -mkdir -p /user/vagrant/input`
-- Put some sample files to input hdfs folder: bin/hdfs dfs -put etc/hadoop/* input`
+- Put some sample files to input hdfs folder: `bin/hdfs dfs -put etc/hadoop/* input`
 - Run mapreduce counting all occurences of string 'dfs': `bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.4.0.jar grep input output 'dfs[a-z.]+'`
 - Show results: bin/hdfs dfs -cat output/*
 
@@ -31,4 +31,4 @@ setup install follow components:
 - You can read hdfs commands docs [here](http://hadoop.apache.org/docs/r2.4.0/hadoop-project-dist/hadoop-common/FileSystemShell.html)
 - For list of all example map reduce builtin in default hadoop package, type: `bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-2.4.0.jar`
 
-*do not use this in production environment!*
+*do not use this configuration in production environment!*
