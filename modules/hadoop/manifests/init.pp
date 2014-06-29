@@ -37,12 +37,18 @@ class hadoop {
         require => Exec["symlink_hadoop"]
     }
 
+    exec { "tmp_hadoop":
+        command => "mkdir ${hadoop_home}/tmp;sudo chown ${hadoop_user}:${hadoop_user} ${hadoop_home}/tmp",
+        path => $path,
+        require => Exec["chown_hadoop"]
+    }
+
     file { "${hadoop_home}/etc/hadoop/hadoop-env.sh":
         source => "/etc/puppet/files/modules/hadoop/hadoop-env.sh",
         mode => 644,
         owner => "${hadoop_user}",
         group => "${hadoop_user}",
-        require => Exec["chown_hadoop"]
+        require => Exec["tmp_hadoop"]
     }
 
     file { "${hadoop_home}/etc/hadoop/core-site.xml":
@@ -84,14 +90,14 @@ class hadoop {
         user => "${hadoop_user}",
         require => File["/home/${hadoop_user}/.ssh/id_dsa.pub"]
     }
-
+/*
     exec { "format":
         command => "${hadoop_home}/bin/hdfs namenode -format",
         path => $path,
         logoutput => true,
         require => Ssh_authorized_key["ssh_key"]
     }
-
+*/
 
 
 
