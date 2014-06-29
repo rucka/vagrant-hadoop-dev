@@ -90,14 +90,14 @@ class hadoop {
         user => "${hadoop_user}",
         require => File["/home/${hadoop_user}/.ssh/id_dsa.pub"]
     }
-/*
+
     exec { "format":
         command => "${hadoop_home}/bin/hdfs namenode -format",
         path => $path,
         logoutput => true,
         require => Ssh_authorized_key["ssh_key"]
     }
-*/
+
 
 
 
